@@ -4,7 +4,7 @@ public class Child extends Parent{
     public static void childStaticVoid1(){
         // какие методы родителя можно вызвать?
         var a = random(1, 5);
-        var b = super.void1();
+        //var b = super.void1();
 
         // с модификатором public и protected, только статичные, random()
     }
