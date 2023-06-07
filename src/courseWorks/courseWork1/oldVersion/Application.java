@@ -1,11 +1,10 @@
-package courseWorks.courseWork1;
+package courseWorks.courseWork1.oldVersion;
 
-import courseWorks.courseWork1.AbonementTypes.DayliAbonement;
-import courseWorks.courseWork1.AbonementTypes.FullAbonement;
-import courseWorks.courseWork1.AbonementTypes.OneTimeAbonement;
+import courseWorks.courseWork1.oldVersion.AbonementTypes.DayliAbonement;
+import courseWorks.courseWork1.oldVersion.AbonementTypes.FullAbonement;
+import courseWorks.courseWork1.oldVersion.AbonementTypes.OneTimeAbonement;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 
 public class Application {
     public static void main(String[] args) {

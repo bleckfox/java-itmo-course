@@ -1,18 +1,35 @@
-package courseWorks.courseWork1;
+package courseWorks.courseWork1.newVersion_07062023;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Фитнес клуб
  */
 public class FitnessClub {
+    /**
+     * Максимальное количество клиентов для каждой зоны
+     */
     private static final int MAX_CAPACITY = 20;
-    private Abonement[] gymAbonements;
-    private Abonement[] poolAbonements;
-    private Abonement[] groupClassesAbonements;
+
+    /**
+     * Список клиентов в тренажерном зале
+     */
+    private final Abonement[] gymAbonements;
+
+    /**
+     * Список клиентов в бассейне
+     */
+    private final Abonement[] poolAbonements;
+
+    /**
+     * Список клиентов на групповых занятиях
+     */
+    private final Abonement[] groupClassesAbonements;
+
     private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("dd MMMM yyyy, HH:mm");
 
     public FitnessClub() {
@@ -26,10 +43,16 @@ public class FitnessClub {
      * @param abonement Абонемент
      * @param desiredZone Желаемая зона
      */
-    public void registerAbonement(Abonement abonement, ClubZones desiredZone){
+    public void registerAbonement(Abonement abonement, ClubZoneEnum desiredZone){
 
         // Если нельзя попасть в зал (вывод внутри метода), то завершить процесс регистрации
         if (!canAccessToClub(abonement, desiredZone)){
+            String outputMessage = "Уважаемый " +
+                    abonement.getClient().getFirstName() + " " + abonement.getClient().getLastName() +
+                    " вы не можете попасть в выбранную зону - '" + desiredZone.label.toLowerCase() + "'" +
+                    ", т.к. ваш абонемент - '" + abonement.getAbonementType().getName() + "'"
+                    + " не предусматривает эту зону.";
+            System.out.println(outputMessage + "\n");
             return;
         }
 
@@ -42,16 +65,14 @@ public class FitnessClub {
         };
 
         if (isRegistered){
-            Client client = abonement.getClient();
-            System.out.println(
-                    client.getLastName() + " " + client.getFirstName() + " посещает " +
-                            desiredZone + " в " + LocalDateTime.now().format(dateTimeFormatter)
-            );
+            String outputMessage = abonement.getClient().getFirstName() + " " + abonement.getClient().getLastName()
+                    + " посещает " + desiredZone.label.toLowerCase()
+                    + " - дата и время посещения: " + dateTimeFormatter.format(LocalDateTime.now()) + "\n";
+            System.out.println(outputMessage);
         }
         else {
-            System.out.println("Извините, в зоне " + desiredZone + " сейчас нет свободных мест. Попробуйте прийти позже.");
+            System.out.println("Извините, в зоне " + desiredZone.label + " сейчас нет свободных мест. Попробуйте прийти позже.");
         }
-
     }
 
     /**
@@ -61,22 +82,6 @@ public class FitnessClub {
         Arrays.fill(gymAbonements, null);
         Arrays.fill(poolAbonements, null);
         Arrays.fill(groupClassesAbonements, null);
-    }
-
-    /**
-     * Метод добавления абонемента в массив
-     * @param abonement Абонемент, который нужно добавить
-     * @param abonements Массив абонементов
-     * @return Признак добавился ли абонемент в массив (true или false)
-     */
-    private boolean registerToZone(Abonement abonement, Abonement[] abonements){
-        for (int i = 0; i < MAX_CAPACITY; i++) {
-            if (abonements[i] == null){
-                abonements[i] = abonement;
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -96,17 +101,31 @@ public class FitnessClub {
      * @param abonements Массив абонементов
      */
     private void printClientsInZone(Abonement[] abonements){
-        Client client;
+        Arrays.stream(abonements)
+                .filter(Objects::nonNull)
+                // .filter(abonement -> abonement != null)
+                .forEach(abonement -> {
+                    System.out.println(
+                            abonement.getClient().getFirstName()
+                                    + " " + abonement.getClient().getLastName()
+                                    + " - " + abonement.getClient().getBirthDate() + "\n");
+                });
+    }
 
-        for (Abonement abonement: abonements) {
-            if (abonement != null){
-                client = abonement.getClient();
-
-                System.out.println(
-                        client.getFirstName() + " " + client.getLastName() + " - " + client.getBirthDate()
-                );
+    /**
+     * Метод добавления абонемента в массив
+     * @param abonement Абонемент, который нужно добавить
+     * @param abonements Массив абонементов
+     * @return Признак добавился ли абонемент в массив (true или false)
+     */
+    private boolean registerToZone(Abonement abonement, Abonement[] abonements){
+        for (int i = 0; i < MAX_CAPACITY; i++) {
+            if (abonements[i] == null){
+                abonements[i] = abonement;
+                return true;
             }
         }
+        return false;
     }
 
     /**
@@ -115,8 +134,7 @@ public class FitnessClub {
      * @param desiredZone Желаемая зона
      * @return Можно ли пройти (true или false)
      */
-    private boolean canAccessToClub(Abonement abonement, ClubZones desiredZone){
-
+    private boolean canAccessToClub(Abonement abonement, ClubZoneEnum desiredZone){
         if (abonement.getEndDate().isBefore(LocalDate.now())){
             System.out.println("Абонемент просрочен!");
             return false;
@@ -127,17 +145,14 @@ public class FitnessClub {
             return false;
         }
 
-        // Проверяем, можно ли посещать желаемую зону
-        boolean canAccess = switch (desiredZone) {
-            case POOL -> abonement.getAbonementType().isHasAccessToPool();
-            case GYM -> abonement.getAbonementType().isHasAccessToGym();
-            case GROUP_CLASSES -> abonement.getAbonementType().isHasAccessToGroupClass();
-            default -> false;
-        };
+        boolean canAccess = abonement.getAbonementType().getAccessedZones().contains(desiredZone);
 
-        if (!canAccess) {
-            System.out.println("У вас " + abonement.getAbonementType().getName().toLowerCase()
-                    + "абонемент. По нему вход в желаемую зону невозможен!");
+        if (!canAccess){
+            System.out.println(
+                    "У вас " + abonement.getAbonementType().getName().toLowerCase()
+                    + " абонемент. По нему вход в желаемую зону '" + desiredZone.label.toLowerCase()
+                    + "' невозможен"
+            );
             return false;
         }
 
@@ -154,5 +169,4 @@ public class FitnessClub {
                 || Arrays.asList(poolAbonements).contains(abonement)
                 || Arrays.asList(groupClassesAbonements).contains(abonement);
     }
-
 }

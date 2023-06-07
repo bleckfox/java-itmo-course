@@ -1,6 +1,6 @@
-package courseWorks.courseWork1;
+package courseWorks.courseWork1.oldVersion;
 
-import courseWorks.courseWork1.AbonementTypes.AbonementType;
+import courseWorks.courseWork1.oldVersion.AbonementTypes.AbonementType;
 
 import java.time.LocalDate;
 
