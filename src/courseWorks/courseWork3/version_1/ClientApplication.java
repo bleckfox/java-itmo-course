@@ -1,5 +1,6 @@
 package courseWorks.courseWork3.version_1;
 
+import courseWorks.courseWork3.Commands.HelpCommand;
 import courseWorks.courseWork3.Message;
 import courseWorks.courseWork3.ReadWrite;
 
@@ -18,17 +19,26 @@ public class ClientApplication implements Runnable {
 
     @Override
     public void run(){
-        try (Socket socket = new Socket(remote.getHostString(), remote.getPort());
-             ReadWrite readWrite = new ReadWrite(socket);
-             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
+        Socket socket = null;
+        ReadWrite readWrite = null;
+        BufferedReader reader = null;
+
+        try {
+            socket = new Socket(remote.getHostString(), remote.getPort());
+            readWrite = new ReadWrite(socket);
+            reader = new BufferedReader(new InputStreamReader(System.in));
 
             System.out.println("Подключен к серверу: " + remote.getHostString() + ":" + remote.getPort());
+
+            // Effective final для использования в лямбда
+            ReadWrite finalReadWrite = readWrite;
+            BufferedReader finalReader = reader;
 
             // Поток для получения сообщений от сервера
             Thread receiveThread = new Thread(() -> {
                 while (running){
                     try{
-                        System.out.println("Сообщение от сервера: " + readWrite.readMessage().getText());
+                        System.out.println("Сообщение от сервера: " + finalReadWrite.readMessage().getText());
                     } catch (IOException e) {
                         System.out.println("Ошибка чтения сообщения от сервера: " + e.getMessage());
                         running = false;
@@ -38,16 +48,27 @@ public class ClientApplication implements Runnable {
 
             // Поток для отправки сообщений на сервер
             Thread sendThread = new Thread(() -> {
+                outerLoop:
                 while (running){
                     try {
-                        String input = reader.readLine();
+                        String input = finalReader.readLine();
 
-                        if (input.equalsIgnoreCase("exit")){
-                            running = false;
-                            break;
+                        switch (input.toLowerCase()){
+                            case "help", "-h" -> {
+                                new HelpCommand().execute();
+                                continue;
+                            }
+                            case "send", "-s" -> System.out.println("send");
+                            case "give", "-g" -> System.out.println("give");
+                            case "all", "-a" -> System.out.println("all");
+                            case "exit", "-e" -> {
+                                System.out.println("Завершение работы!");
+                                running = false;
+                                break outerLoop;
+                            }
                         }
 
-                        readWrite.writeMessage(new Message(input));
+                        finalReadWrite.writeMessage(new Message(input));
 
                     } catch (IOException e) {
                         System.out.println("Ошибка отправки сообщения на сервер: " + e.getMessage());
@@ -56,10 +77,16 @@ public class ClientApplication implements Runnable {
                 }
             });
 
-            receiveThread.start();
-            sendThread.start();
+            receiveThread.setDaemon(true);
 
-            receiveThread.join();
+            sendThread.start();
+            receiveThread.start();
+
+            // Необходимо ожидать поток отправителя (sendThread), иначе происходит разрыв соединения
+            // в блоке finally и поток получателя (receiveThread) падает с ошибкой "Ошибка чтения сообщения от сервера: Socket closed"
+            // если не ожидать ни один дочерний поток в основном, то -> socket, readWrite, reader будут закрыты
+            // как только откроются
+            // если ожидаем только поток отправителя, то соединение будет прервано только по инициативе клиента
             sendThread.join();
 
             System.out.println("Работа клиента завершена.");
@@ -68,74 +95,27 @@ public class ClientApplication implements Runnable {
             System.out.println("Ошибка подключения к серверу: " + e.getMessage());
         } catch (InterruptedException e) {
             System.out.println("Процесс клиента был прерван: " + e.getMessage());
+        } finally {
+            // Закрытие соединения и ресурсов
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    System.out.println("Ошибка при закрытии сокета: " + e.getMessage());
+                }
+            }
+
+            if (readWrite != null) {
+                readWrite.close();
+            }
+
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    System.out.println("Ошибка при закрытии BufferedReader: " + e.getMessage());
+                }
+            }
         }
     }
 }
-
-//public class ClientApplication {
-//    private static InetSocketAddress remote;
-//
-//    public ClientApplication(InetSocketAddress remote) { this.remote = remote; }
-//
-//    public static void main(String[] args) {
-//        try (Socket socket = new Socket(remote.getHostString(), remote.getPort())) {
-//            ReadWrite readWrite = new ReadWrite(socket);
-//
-//            // Создание потока для чтения ввода пользователя и отправки сообщений на сервер
-//            Thread sendMessageThread = new Thread(() -> {
-//
-//                // Создание читателя для чтения ввода пользователя из консоли
-//                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-//
-//                String input;
-//
-//                while (true){
-//                    try {
-//                        input = reader.readLine();
-//
-//                        if (input.equalsIgnoreCase("exit")){
-//                            break;
-//                        }
-//                        // Отправка сообщения на сервер
-//                        Message message = new Message(input);
-//                        readWrite.writeMessage(message);
-//
-//                    } catch (IOException e) {
-//                        throw new RuntimeException(e);
-//                    }
-//
-//                }
-//            });
-//
-//            // Создание потока для приема сообщений от сервера и их вывода в консоль
-//            Thread receiveMessageThread = new Thread(() -> {
-//                try{
-//                    while (true){
-//                        // Чтение сообщения от сервера
-//                        Message message = readWrite.readMessage();
-//
-//                        if (message != null){
-//                            // Вывод полученного сообщения и времени его отправки
-//                            System.out.println("Received: " + message.getText() + " Sent at: " + message.getSent());
-//                        }
-//                    }
-//                } catch (IOException e){
-//                    e.printStackTrace();
-//                }
-//            });
-//
-//            // Запуск потоков
-//            sendMessageThread.start();
-//            receiveMessageThread.start();
-//
-//            // Ожидание завершения программы
-//            sendMessageThread.join();
-//            receiveMessageThread.join();
-//
-//            readWrite.close();
-//
-//        } catch (IOException | InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//}
