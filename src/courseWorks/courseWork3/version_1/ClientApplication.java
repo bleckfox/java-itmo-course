@@ -1,12 +1,17 @@
 package courseWorks.courseWork3.version_1;
 
+import courseWorks.courseWork3.Commands.GetFileCommand;
+import courseWorks.courseWork3.Commands.GetFilesCommand;
 import courseWorks.courseWork3.Commands.HelpCommand;
+import courseWorks.courseWork3.Commands.SendFileCommand;
+import courseWorks.courseWork3.Helper;
 import courseWorks.courseWork3.Message;
 import courseWorks.courseWork3.ReadWrite;
 
 import java.io.*;
 import java.net.Socket;
 import java.net.InetSocketAddress;
+import java.util.Scanner;
 
 public class ClientApplication implements Runnable {
     private InetSocketAddress remote;
@@ -58,9 +63,29 @@ public class ClientApplication implements Runnable {
                                 new HelpCommand().execute();
                                 continue;
                             }
-                            case "send", "-s" -> System.out.println("send");
-                            case "give", "-g" -> System.out.println("give");
-                            case "all", "-a" -> System.out.println("all");
+                            case "send", "-s" -> {
+                                // Обработка ввода названия файла
+                                String fileName = Helper.getFileName(false, true);
+
+                                SendFileCommand sendFile = new SendFileCommand(fileName);
+                                sendFile.execute();
+                                continue;
+                            }
+                            case "get", "-g" -> {
+                                // Обработка ввода названия файла
+                                String folder = Helper.getFileName(true, false);
+                                String fileName = Helper.getFileName(false, false);
+
+                                if (fileName != null){
+                                    GetFileCommand getFile = new GetFileCommand(folder, fileName);
+                                    getFile.execute();
+                                }
+                                continue;
+                            }
+                            case "all", "-a" -> {
+                                new GetFilesCommand().execute();
+                                continue;
+                            }
                             case "exit", "-e" -> {
                                 System.out.println("Завершение работы!");
                                 running = false;
