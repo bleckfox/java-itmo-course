@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Scanner;
 
 public class Helper {
@@ -90,7 +91,7 @@ public class Helper {
         Path fileStorage = Paths.get(folder, fileName);
 
         try {
-            Files.write(fileStorage, fileData);
+            Files.write(fileStorage, fileData, StandardOpenOption.CREATE);
 //            FileOutputStream outputStream = new FileOutputStream(fileStorage);
 //            outputStream.write(fileData);
 //            outputStream.close();

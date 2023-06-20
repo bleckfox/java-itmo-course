@@ -3,6 +3,7 @@ package courseWorks.courseWork3.Commands;
 import courseWorks.courseWork3.Helper;
 
 import java.io.File;
+import java.nio.file.Paths;
 
 public class GetFileCommand implements ICommand {
 
@@ -28,7 +29,7 @@ public class GetFileCommand implements ICommand {
 
         if (fileData != null){
             Helper.uploadFile(folder, fileName, fileData);
-            System.out.println("Файл успешно сохранен: " + fileToSend.getName() + " -> " + fileToSend.getAbsolutePath());
+            System.out.println("Файл успешно сохранен: " + fileToSend.getName() + " -> " + Paths.get(folder, fileName));
         } else {
             System.out.println("Ошибка сохранения файла: " + fileToSend.getName());
         }
